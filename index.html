@@ -2,77 +2,146 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Scandi Home 3D</title>
+  <title>Scandi Home 3D Конструктор</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="three.min.js"></script>
   <script src="OrbitControls.min.js"></script>
   <style>
     body { margin: 0; font-family: Arial; background: #f0f0f0; height: 100vh; overflow: hidden; text-align: center; }
-    #container { width: 100%; height: 70vh; background: #e0f7fa; }
-    h1 { margin: 10px 0 5px; color: #333; }
-    p { margin: 0 0 15px; color: #555; }
-    button { padding: 12px 24px; font-size: 16px; margin: 5px; border: none; border-radius: 8px; cursor: pointer; color: white; }
-    #changeColor { background: #2196F3; }
-    #sendConfig { background: #4CAF50; }
+    #container { width: 100%; height: 60vh; background: #e0f7fa; }
+    #controls { padding: 10px; background: white; position: absolute; bottom: 0; width: 100%; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+    button { padding: 10px 20px; font-size: 16px; margin: 5px; border: none; border-radius: 8px; cursor: pointer; color: white; }
+    #price { font-size: 18px; margin: 10px; color: #333; }
+    #status { color: green; font-size: 16px; margin: 5px; }
   </style>
 </head>
 <body>
   <h1>Собери свой дом 🏠</h1>
-  <p>Крути кубик пальцем/мышкой. Это прототип!</p>
+  <p id="status">Крути дом пальцем. Добавляй террасу!</p>
   <div id="container"></div>
-  <div>
-    <button id="changeColor">Сменить цвет дома</button>
-    <button id="sendConfig">Готово — отправить менеджеру</button>
+  <div id="controls">
+    <button id="addTerrace">Добавить террасу</button>
+    <button id="removeTerrace">Убрать террасу</button>
+    <button id="changeWallsColor">Сменить цвет стен</button>
+    <button id="changeRoofColor">Сменить цвет крыши</button>
+    <div id="price">Площадь: 50 м² | Цена: 1 150 000 грн</div>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
-    tg.MainButton.setText("Отправить конфиг");
+    tg.MainButton.setText("Отправить менеджеру");
     tg.MainButton.show();
 
-    // THREE теперь локальный — ошибки загрузки не будет
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xe0f7fa);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 5;
+    camera.position.set(0, 2, 8);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight * 0.7);
+    renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
     document.getElementById('container').appendChild(renderer.domElement);
 
-    const geometry = new THREE.BoxGeometry(2, 2, 2);
-    let material = new THREE.MeshStandardMaterial({ color: 0xff9800 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-
-    scene.add(new THREE.DirectionalLight(0xffffff, 1).position.set(5,5,5));
-    scene.add(new THREE.AmbientLight(0x404040));
+    // Свет
+    scene.add(new THREE.DirectionalLight(0xffffff, 1.2).position.set(5, 10, 7));
+    scene.add(new THREE.AmbientLight(0x404040, 0.8));
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 5;
+    controls.maxDistance = 20;
+
+    // Стены (основной куб)
+    const wallsGeometry = new THREE.BoxGeometry(5, 3, 5);
+    let wallsMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const walls = new THREE.Mesh(wallsGeometry, wallsMaterial);
+    walls.position.y = 1.5;
+    scene.add(walls);
+
+    // Крыша (пирамида)
+    const roofGeometry = new THREE.ConeGeometry(4, 2, 4);
+    let roofMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+    roof.position.y = 4;
+    roof.rotation.y = Math.PI / 4;
+    scene.add(roof);
+
+    // Терраса (по умолчанию скрыта)
+    const terraceGeometry = new THREE.BoxGeometry(6, 0.2, 4);
+    let terraceMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    const terrace = new THREE.Mesh(terraceGeometry, terraceMaterial);
+    terrace.position.set(0, 0.1, 4);
+    terrace.visible = false;
+    scene.add(terrace);
+
+    let area = 50; // базовая площадь
+    let pricePerM2 = 23000;
+    const priceElement = document.getElementById('price');
+
+    function updatePrice() {
+      let extra = terrace.visible ? 10 : 0; // +10 м² за террасу
+      area = 50 + extra;
+      const totalPrice = area * pricePerM2;
+      priceElement.innerText = `Площадь: ${area} м² | Цена: ${totalPrice.toLocaleString()} грн`;
+    }
+    updatePrice();
 
     function animate() {
       requestAnimationFrame(animate);
-      cube.rotation.y += 0.005;
+      walls.rotation.y += 0.002;
+      roof.rotation.y += 0.002;
       controls.update();
       renderer.render(scene, camera);
     }
     animate();
 
-    document.getElementById('changeColor').onclick = () => {
-      material.color.set(Math.random() * 0xffffff);
+    // Кнопки
+    document.getElementById('addTerrace').onclick = () => {
+      terrace.visible = true;
+      updatePrice();
+      tg.showAlert("Терраса добавлена!");
+    };
+
+    document.getElementById('removeTerrace').onclick = () => {
+      terrace.visible = false;
+      updatePrice();
+      tg.showAlert("Терраса убрана!");
+    };
+
+    document.getElementById('changeWallsColor').onclick = () => {
+      wallsMaterial.color.set(Math.random() * 0xffffff);
+      tg.showAlert("Цвет стен изменён!");
+    };
+
+    document.getElementById('changeRoofColor').onclick = () => {
+      roofMaterial.color.set(Math.random() * 0xffffff);
+      tg.showAlert("Цвет крыши изменён!");
     };
 
     document.getElementById('sendConfig').onclick = () => {
-      tg.sendData("Дом готов! Цвет: #" + material.color.getHexString() + ", Площадь ~50 м²");
+      const config = {
+        wallsColor: '#' + wallsMaterial.color.getHexString(),
+        roofColor: '#' + roofMaterial.color.getHexString(),
+        terrace: terrace.visible ? 'Да' : 'Нет',
+        area: area,
+        price: area * pricePerM2
+      };
+      tg.sendData(JSON.stringify(config));
       tg.close();
     };
 
     tg.MainButton.onClick(() => {
-      tg.sendData("Конфиг отправлен!");
+      const config = {
+        wallsColor: '#' + wallsMaterial.color.getHexString(),
+        roofColor: '#' + roofMaterial.color.getHexString(),
+        terrace: terrace.visible ? 'Да' : 'Нет',
+        area: area,
+        price: area * pricePerM2
+      };
+      tg.sendData(JSON.stringify(config));
     });
   </script>
 </body>
