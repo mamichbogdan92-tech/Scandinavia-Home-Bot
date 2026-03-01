@@ -2,117 +2,125 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Собери свой дом 2D</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Собери свой дом 3D</title>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/examples/js/controls/OrbitControls.min.js"></script>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; background: #f0f0f0; height: 100vh; overflow: hidden; }
-    #container { width: 100%; height: 70vh; background: #8bc34a; position: relative; border: 2px solid #4caf50; }
-    #controls { padding: 10px; background: white; position: absolute; bottom: 0; width: 100%; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; }
-    .module { width: 80px; height: 80px; background: #fff; border: 2px solid #ccc; margin: 5px; display: inline-block; cursor: grab; text-align: center; line-height: 80px; font-size: 12px; border-radius: 8px; }
-    .module:hover { background: #e0e0e0; }
-    h1 { margin: 8px 0 4px; color: #333; font-size: 22px; text-align: center; }
-    #price { font-size: 18px; margin: 10px; color: #333; font-weight: bold; text-align: center; }
-    button { padding: 8px 16px; font-size: 14px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; color: white; }
-    #sendConfig { background: #4CAF50; }
+    #container { width: 100%; height: 100vh; }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255,255,255,0.9);
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      max-width: 300px;
+    }
+    button {
+      padding: 10px 16px;
+      margin: 5px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+    }
+    #addTerrace { background: #4CAF50; }
+    #changeColor { background: #2196F3; }
+    #price { font-weight: bold; margin: 10px 0; font-size: 16px; }
   </style>
 </head>
 <body>
-  <h1>Собери свой дом 2D 🏠</h1>
   <div id="container"></div>
-  <div id="controls">
-    <div class="module" draggable="true" data-type="wall" style="background: #f0f0f0;">Стена</div>
-    <div class="module" draggable="true" data-type="roof" style="background: #b22222;">Крыша</div>
-    <div class="module" draggable="true" data-type="terrace" style="background: #8b4513;">Терраса</div>
-    <div class="module" draggable="true" data-type="window" style="background: #87ceeb;">Окно</div>
-    <button id="changeColor">Сменить цвет</button>
-    <button id="sendConfig">Готово — отправить</button>
+  <div id="ui">
+    <h2>Собери свой дом</h2>
+    <p>Крути пальцем/мышкой</p>
+    <button id="addTerrace">Добавить террасу</button>
+    <button id="changeColor">Сменить цвет дома</button>
+    <div id="price">Площадь: 50 м² | Цена: 1 150 000 грн</div>
   </div>
-  <div id="price">Площадь: 0 м² | Цена: 0 грн</div>
 
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
-    tg.MainButton.setText("Отправить менеджеру");
-    tg.MainButton.show();
-
     const container = document.getElementById('container');
     const priceEl = document.getElementById('price');
 
-    let area = 0;
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xe0f7fa);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 5, 15);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    // Свет
+    scene.add(new THREE.DirectionalLight(0xffffff, 1.5).position.set(10, 15, 10));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+
+    // Стены (базовый блок)
+    const wallsGeo = new THREE.BoxGeometry(8, 5, 8);
+    let wallsMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const walls = new THREE.Mesh(wallsGeo, wallsMat);
+    walls.position.y = 2.5;
+    scene.add(walls);
+
+    // Крыша
+    const roofGeo = new THREE.ConeGeometry(7.5, 4, 4);
+    let roofMat = new THREE.MeshStandardMaterial({ color: 0xb22222 });
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.y = 7.5;
+    roof.rotation.y = Math.PI / 4;
+    scene.add(roof);
+
+    // Терраса (скрыта)
+    const terraceGeo = new THREE.BoxGeometry(10, 0.4, 6);
+    let terraceMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+    const terrace = new THREE.Mesh(terraceGeo, terraceMat);
+    terrace.position.set(0, 0.2, 8);
+    terrace.visible = false;
+    scene.add(terrace);
+
+    let area = 50;
     const pricePerM2 = 23000;
 
     function updatePrice() {
-      priceEl.innerText = `Площадь: ${area} м² | Цена: ${(area * pricePerM2).toLocaleString()} грн`;
+      area = 50 + (terrace.visible ? 15 : 0);
+      priceEl.innerText = `Площадь: ${area} м² | Цена: ${ (area * pricePerM2).toLocaleString() } грн`;
     }
-
-    // Перетаскивание модулей
-    const modules = document.querySelectorAll('.module');
-    modules.forEach(module => {
-      module.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', module.dataset.type);
-      });
-    });
-
-    container.addEventListener('dragover', (e) => e.preventDefault());
-
-    container.addEventListener('drop', (e) => {
-      e.preventDefault();
-      const type = e.dataTransfer.getData('text/plain');
-      const x = e.offsetX;
-      const y = e.offsetY;
-
-      const module = document.createElement('div');
-      module.style.position = 'absolute';
-      module.style.left = x + 'px';
-      module.style.top = y + 'px';
-      module.style.width = '80px';
-      module.style.height = '80px';
-      module.style.background = '#fff';
-      module.style.border = '2px solid #ccc';
-      module.style.borderRadius = '8px';
-      module.innerText = type;
-      module.draggable = true;
-      module.dataset.type = type;
-
-      container.appendChild(module);
-
-      // Увеличиваем площадь в зависимости от типа
-      if (type === 'wall') area += 10;
-      if (type === 'roof') area += 5;
-      if (type === 'terrace') area += 15;
-      if (type === 'window') area += 2;
-      updatePrice();
-    });
-
-    // Смена цвета (для примера — меняет фон всех модулей)
-    document.getElementById('changeColor').onclick = () => {
-      const color = '#' + Math.floor(Math.random()*16777215).toString(16);
-      document.querySelectorAll('.module').forEach(m => m.style.background = color);
-      tg.showAlert("Цвет изменён!");
-    };
-
-    // Отправка конфига
-    document.getElementById('sendConfig').onclick = () => {
-      const config = {
-        area: area,
-        price: area * pricePerM2,
-        modules: Array.from(container.querySelectorAll('.module')).map(m => m.dataset.type)
-      };
-      tg.sendData(JSON.stringify(config));
-      tg.close();
-    };
-
-    tg.MainButton.onClick(() => {
-      const config = {
-        area: area,
-        price: area * pricePerM2,
-        modules: Array.from(container.querySelectorAll('.module')).map(m => m.dataset.type)
-      };
-      tg.sendData(JSON.stringify(config));
-    });
-
     updatePrice();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    document.getElementById('addTerrace').onclick = () => {
+      terrace.visible = true;
+      updatePrice();
+      alert("Терраса добавлена!");
+    };
+
+    document.getElementById('changeColor').onclick = () => {
+      const color = Math.random() * 0xffffff;
+      wallsMat.color.set(color);
+      roofMat.color.set(color);
+      alert("Цвет дома изменён!");
+    };
   </script>
 </body>
 </html>
