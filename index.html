@@ -5,69 +5,94 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Собери свой дом — Scandinavia Home</title>
   <style>
-    body { margin: 0; font-family: Arial; background: #f4f4f4; height: 100vh; overflow: hidden; }
-    #canvas { width: 100%; height: 65vh; background: #8bc34a; position: relative; border: 4px solid #388e3c; }
-    #sidebar { position: absolute; top: 0; right: 0; width: 340px; height: 100vh; background: white; padding: 20px; overflow-y: auto; box-shadow: -5px 0 25px rgba(0,0,0,0.2); }
-    .module { 
-      width: 100%; height: 65px; background: #fff; border: 2px solid #ddd; margin: 8px 0; 
-      display: flex; align-items: center; justify-content: center; cursor: grab; 
-      border-radius: 12px; font-weight: bold; font-size: 14px;
+    body { margin: 0; font-family: Arial; background: #f0f7f0; height: 100vh; overflow: hidden; }
+    #canvas { 
+      width: 100%; 
+      height: 68vh; 
+      background: linear-gradient(#a5d6a7, #66bb6a); 
+      position: relative; 
+      border-bottom: 8px solid #2e7d32; 
+      box-shadow: inset 0 0 80px rgba(0,0,0,0.2);
     }
-    .tab-button { padding: 12px; margin: 5px 0; background: #4CAF50; color: white; border: none; border-radius: 10px; cursor: pointer; width: 100%; }
-    .tab-button.active { background: #1b5e20; }
-    button { padding: 12px; margin: 8px 0; width: 100%; border: none; border-radius: 10px; cursor: pointer; }
-    #price { font-size: 19px; font-weight: bold; background: #e8f5e9; padding: 15px; border-radius: 12px; text-align: center; margin: 15px 0; }
+    #sidebar { 
+      position: absolute; 
+      top: 0; 
+      right: 0; 
+      width: 360px; 
+      height: 100vh; 
+      background: white; 
+      padding: 25px; 
+      overflow-y: auto; 
+      box-shadow: -8px 0 30px rgba(0,0,0,0.25); 
+    }
+    h1 { color: #1b5e20; text-align: center; margin: 0 0 20px; font-size: 28px; }
+    .module { 
+      width: 100%; 
+      height: 75px; 
+      background: #fff; 
+      border: 3px solid #4caf50; 
+      margin: 12px 0; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      cursor: grab; 
+      border-radius: 14px; 
+      font-weight: bold; 
+      font-size: 15px;
+    }
+    button { 
+      width: 100%; 
+      padding: 14px; 
+      margin: 10px 0; 
+      border: none; 
+      border-radius: 12px; 
+      font-size: 16px; 
+      cursor: pointer; 
+      color: white;
+    }
+    #price { 
+      font-size: 21px; 
+      font-weight: bold; 
+      background: #e8f5e9; 
+      padding: 18px; 
+      border-radius: 14px; 
+      text-align: center; 
+      margin: 20px 0; 
+      color: #1b5e20;
+    }
   </style>
 </head>
 <body>
   <div id="canvas"></div>
   <div id="sidebar">
-    <h2>Собери свой дом</h2>
+    <h1>Собери свой дом</h1>
+    <p style="text-align:center; color:#555;">Перетаскивай модули на участок</p>
 
-    <!-- Вкладки -->
-    <button class="tab-button active" onclick="openTab(0)">Основные модули</button>
-    <button class="tab-button" onclick="openTab(1)">Доп. расходы</button>
+    <div class="module" draggable="true" data-area="12">🧱 Стена (+12 м²)</div>
+    <div class="module" draggable="true" data-area="8">🏠 Крыша (+8 м²)</div>
+    <div class="module" draggable="true" data-area="18">🌳 Терраса (+18 м²)</div>
+    <div class="module" draggable="true" data-area="4">🪟 Окно (+4 м²)</div>
+    <div class="module" draggable="true" data-area="3">🚪 Дверь (+3 м²)</div>
 
-    <!-- Вкладка 1 -->
-    <div id="tab0">
-      <div class="module" draggable="true" data-area="10">Стена (+10 м²)</div>
-      <div class="module" draggable="true" data-area="5">Крыша (+5 м²)</div>
-      <div class="module" draggable="true" data-area="18">Терраса (+18 м²)</div>
-      <div class="module" draggable="true" data-area="3">Окно (+3 м²)</div>
-      <div class="module" draggable="true" data-area="2">Дверь (+2 м²)</div>
-    </div>
-
-    <!-- Вкладка 2 (допы из твоего PDF) -->
-    <div id="tab1" class="tab" style="display:none;">
-      <div class="module" draggable="true" data-area="0" data-price="750">Доп. теплоизоляция +50 мм</div>
-      <div class="module" draggable="true" data-area="0" data-price="1500">Фасад из рейки</div>
-      <div class="module" draggable="true" data-area="0" data-price="4500">Тераса сосна</div>
-      <div class="module" draggable="true" data-area="0" data-price="5500">Тераса композит</div>
-      <div class="module" draggable="true" data-area="0" data-price="1400">Теплая подлога</div>
-      <div class="module" draggable="true" data-area="0" data-price="29000">Кондиционер</div>
-    </div>
-
-    <button onclick="changeColor()" style="background:#2196F3;">Сменить цвет дома</button>
+    <button onclick="changeColor()" style="background:#2196F3;">🎨 Сменить цвет дома</button>
     <button onclick="sendToBot()" style="background:#4CAF50;">Отправить менеджеру</button>
+
     <div id="price">Площадь: 0 м² | Цена: 0 грн</div>
   </div>
 
   <script>
     const canvas = document.getElementById('canvas');
     let totalArea = 0;
-    let totalExtraPrice = 0;
-    const basePrice = 23500;
+    const pricePerM2 = 23500;
 
     function updatePrice() {
-      const total = Math.round((totalArea * basePrice) + totalExtraPrice);
-      document.getElementById('price').innerText = `Площадь: ${totalArea} м² | Цена: ${total.toLocaleString()} грн`;
+      const totalPrice = Math.round(totalArea * pricePerM2);
+      document.getElementById('price').innerText = `Площадь: ${totalArea} м² | Цена: ${totalPrice.toLocaleString()} грн`;
     }
 
-    // Перетаскивание
     document.querySelectorAll('.module').forEach(mod => {
       mod.addEventListener('dragstart', e => {
-        e.dataTransfer.setData('area', mod.dataset.area || 0);
-        e.dataTransfer.setData('extraPrice', mod.dataset.price || 0);
+        e.dataTransfer.setData('area', mod.dataset.area);
         e.dataTransfer.setData('name', mod.innerText);
       });
     });
@@ -77,28 +102,27 @@
     canvas.addEventListener('drop', e => {
       e.preventDefault();
       const area = parseFloat(e.dataTransfer.getData('area'));
-      const extraPrice = parseFloat(e.dataTransfer.getData('extraPrice'));
       const name = e.dataTransfer.getData('name');
 
       const item = document.createElement('div');
       item.style.position = 'absolute';
-      item.style.left = (e.offsetX - 40) + 'px';
-      item.style.top = (e.offsetY - 40) + 'px';
-      item.style.width = '80px';
-      item.style.height = '80px';
-      item.style.border = '3px solid #333';
-      item.style.borderRadius = '10px';
+      item.style.left = (e.offsetX - 50) + 'px';
+      item.style.top = (e.offsetY - 35) + 'px';
+      item.style.width = '100px';
+      item.style.height = '70px';
+      item.style.border = '4px solid #333';
+      item.style.borderRadius = '12px';
       item.style.background = '#fff';
       item.style.display = 'flex';
       item.style.alignItems = 'center';
       item.style.justifyContent = 'center';
-      item.style.fontSize = '11px';
-      item.style.textAlign = 'center';
+      item.style.fontSize = '13px';
+      item.style.fontWeight = 'bold';
+      item.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
       item.innerText = name;
       canvas.appendChild(item);
 
       totalArea += area;
-      totalExtraPrice += extraPrice;
       updatePrice();
     });
 
@@ -108,13 +132,7 @@
     }
 
     function sendToBot() {
-      const config = { area: totalArea, price: Math.round(totalArea * basePrice + totalExtraPrice) };
-      alert("✅ Конфиг отправлен менеджеру!\nПлощадь: " + totalArea + " м²\nЦена: " + config.price.toLocaleString() + " грн");
-    }
-
-    function openTab(n) {
-      document.querySelectorAll('.tab').forEach(t => t.style.display = 'none');
-      document.getElementById('tab' + n).style.display = 'block';
+      alert(`✅ Дом построен и отправлен менеджеру!\n\nПлощадь: ${totalArea} м²\nЦена: ${Math.round(totalArea * pricePerM2).toLocaleString()} грн`);
     }
 
     updatePrice();
