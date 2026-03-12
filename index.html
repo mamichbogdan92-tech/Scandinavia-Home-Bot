@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Собери свой дом 3D</title>
+  <title>Собери свой дом 3D — Scandinavia Home</title>
   <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/examples/js/controls/OrbitControls.min.js"></script>
   <style>
@@ -13,39 +13,47 @@
       position: absolute;
       top: 20px;
       left: 20px;
-      background: rgba(0,0,0,0.7);
-      padding: 15px;
-      border-radius: 12px;
+      background: rgba(0,0,0,0.85);
+      padding: 20px;
+      border-radius: 16px;
+      width: 320px;
       z-index: 100;
     }
     button {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       margin: 8px 0;
       background: #333;
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
+      font-size: 15px;
       cursor: pointer;
     }
-    #price { font-size: 18px; font-weight: bold; margin: 15px 0; color: lime; }
+    button:hover { background: #555; }
+    #price { font-size: 19px; font-weight: bold; margin: 15px 0; color: lime; text-align: center; }
+    h1 { margin: 0 0 15px; font-size: 26px; text-align: center; }
   </style>
 </head>
 <body>
   <div id="container"></div>
   <div id="ui">
-    <h2>Собери свой дом 3D</h2>
-    <button id="addTerrace">+ Терраса</button>
-    <button id="changeColor">Сменить цвет</button>
+    <h1>Собери свой дом 3D</h1>
+    <button id="addTerrace">+ Терраса (+18 м²)</button>
+    <button id="addWindow">+ Окно (+3 м²)</button>
+    <button id="addDoor">+ Дверь (+2 м²)</button>
+    <button id="changeWalls">🎨 Цвет стен</button>
+    <button id="changeRoof">🏠 Цвет крыши</button>
+    <button id="sendConfig" style="background:#4CAF50;">Отправить менеджеру</button>
     <div id="price">Площадь: 50 м² | Цена: 1 150 000 грн</div>
   </div>
 
   <script>
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000); // чёрный фон, как ты просил
+    scene.background = new THREE.Color(0x000000);
 
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 5, 12); // ближе и выше
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 8, 20);  // ← специально отодвинуто, чтобы дом был виден сразу
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -54,31 +62,52 @@
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // Большой белый дом (стены)
+    // Стены (большой белый дом)
     const walls = new THREE.Mesh(
-      new THREE.BoxGeometry(10, 6, 10),
-      new THREE.MeshBasicMaterial({ color: 0xffffff }) // белые стены, без света
+      new THREE.BoxGeometry(12, 7, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
     );
-    walls.position.y = 3;
+    walls.position.y = 3.5;
     scene.add(walls);
 
-    // Красная крыша
+    // Крыша
     const roof = new THREE.Mesh(
-      new THREE.ConeGeometry(9, 4, 4),
+      new THREE.ConeGeometry(11, 5, 4),
       new THREE.MeshBasicMaterial({ color: 0xff0000 })
     );
-    roof.position.y = 8;
+    roof.position.y = 9.5;
     roof.rotation.y = Math.PI / 4;
     scene.add(roof);
 
     // Терраса
     const terrace = new THREE.Mesh(
-      new THREE.BoxGeometry(12, 0.4, 7),
+      new THREE.BoxGeometry(15, 0.4, 8),
       new THREE.MeshBasicMaterial({ color: 0x555555 })
     );
-    terrace.position.set(0, 0.2, 9);
+    terrace.position.set(0, 0.2, 11);
     terrace.visible = false;
     scene.add(terrace);
+
+    // Окно и дверь (для примера)
+    const windowMesh = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.2), new THREE.MeshBasicMaterial({ color: 0x87ceeb }));
+    windowMesh.position.set(4, 4, 6.1);
+    windowMesh.visible = false;
+    scene.add(windowMesh);
+
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.5, 0.2), new THREE.MeshBasicMaterial({ color: 0x5d4037 }));
+    door.position.set(-4, 2, 6.1);
+    door.visible = false;
+    scene.add(door);
+
+    let area = 50;
+    const pricePerM2 = 23500;
+    const priceEl = document.getElementById('price');
+
+    function updatePrice() {
+      area = 50 + (terrace.visible ? 18 : 0) + (windowMesh.visible ? 3 : 0) + (door.visible ? 2 : 0);
+      priceEl.innerText = `Площадь: ${area} м² | Цена: ${(area * pricePerM2).toLocaleString()} грн`;
+    }
+    updatePrice();
 
     function animate() {
       requestAnimationFrame(animate);
@@ -87,21 +116,22 @@
     }
     animate();
 
-    // Кнопки
-    document.getElementById('addTerrace').onclick = () => {
-      terrace.visible = !terrace.visible;
-    };
-
-    document.getElementById('changeColor').onclick = () => {
-      walls.material.color.set(Math.random() * 0xffffff);
-    };
-
-    // Resize
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    // Кнопки
+    document.getElementById('addTerrace').onclick = () => { terrace.visible = !terrace.visible; updatePrice(); };
+    document.getElementById('addWindow').onclick = () => { windowMesh.visible = !windowMesh.visible; updatePrice(); };
+    document.getElementById('addDoor').onclick = () => { door.visible = !door.visible; updatePrice(); };
+    document.getElementById('changeWalls').onclick = () => { walls.material.color.set(Math.random() * 0xffffff); };
+    document.getElementById('changeRoof').onclick = () => { roof.material.color.set(Math.random() * 0xffffff); };
+
+    document.getElementById('sendConfig').onclick = () => {
+      alert("✅ Конфиг отправлен менеджеру!\nПлощадь: " + area + " м²\nЦена: " + (area * pricePerM2).toLocaleString() + " грн");
+    };
   </script>
 </body>
 </html>
