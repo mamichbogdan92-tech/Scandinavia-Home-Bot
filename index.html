@@ -1,324 +1,71 @@
-```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+
 <meta charset="UTF-8">
-<title>Ultimate House Builder</title>
+<title>Конструктор дома</title>
 
-<style>
+<link rel="stylesheet" href="style.css">
 
-body{
-margin:0;
-font-family:Arial;
-background:#111827;
-color:white;
-}
-
-#topbar{
-background:#1f2937;
-padding:10px;
-display:flex;
-flex-wrap:wrap;
-gap:8px;
-}
-
-button{
-background:#3b82f6;
-border:none;
-padding:8px 12px;
-color:white;
-cursor:pointer;
-border-radius:6px;
-}
-
-button:hover{
-background:#2563eb;
-}
-
-#canvas{
-width:100%;
-height:90vh;
-background:white;
-position:relative;
-overflow:hidden;
-
-background-image:
-linear-gradient(#ddd 1px, transparent 1px),
-linear-gradient(90deg,#ddd 1px, transparent 1px);
-
-background-size:40px 40px;
-}
-
-.element{
-position:absolute;
-cursor:move;
-transform-origin:center;
-}
-
-.wall{
-width:140px;
-height:20px;
-background:#777;
-}
-
-.window{
-width:70px;
-height:70px;
-background:#8ed6ff;
-border:4px solid #444;
-}
-
-.door{
-width:60px;
-height:110px;
-background:#7b4a1e;
-}
-
-.table{
-width:90px;
-height:90px;
-background:#caa472;
-}
-
-.sofa{
-width:140px;
-height:60px;
-background:#5a7d9a;
-}
-
-.bed{
-width:140px;
-height:100px;
-background:#c48cf0;
-}
-
-.tree{
-width:80px;
-height:80px;
-background:green;
-border-radius:50%;
-}
-
-.selected{
-outline:3px dashed red;
-}
-
-</style>
 </head>
 
 <body>
 
-<div id="topbar">
+<div class="container">
 
-<button onclick="setTool('wall')">Стена</button>
-<button onclick="setTool('window')">Окно</button>
-<button onclick="setTool('door')">Дверь</button>
+<h1>Конструктор дома</h1>
 
-<button onclick="setTool('table')">Стол</button>
-<button onclick="setTool('sofa')">Диван</button>
-<button onclick="setTool('bed')">Кровать</button>
+<div class="builder">
 
-<button onclick="setTool('tree')">Дерево</button>
+<div class="left">
 
-<input type="color" id="colorPicker">
-
-<button onclick="rotate()">Повернуть</button>
-<button onclick="deleteSelected()">Удалить</button>
-
-<button onclick="save()">Сохранить</button>
-<button onclick="load()">Загрузить</button>
+<img id="houseImage" src="images/barnhouse.jpg">
 
 </div>
 
-<div id="canvas"></div>
+<div class="right">
 
-<script>
+<label>Модель дома</label>
 
-let canvas=document.getElementById("canvas")
+<select id="modelSelect"></select>
 
-let currentTool="wall"
-let selected=null
+<label>Площадь (м²)</label>
 
-let zoom=1
+<input type="range" min="50" max="200" value="100" id="areaRange">
+<div id="areaValue">100 м²</div>
 
-function setTool(t){
-currentTool=t
-}
+<label>Фасад</label>
 
-canvas.addEventListener("click",function(e){
+<select id="facade">
+<option value="0">Стандарт</option>
+<option value="80000">Премиум</option>
+</select>
 
-if(e.target!==canvas) return
+<label>Терраса</label>
 
-let rect=canvas.getBoundingClientRect()
+<select id="terrace">
+<option value="0">Нет</option>
+<option value="120000">Есть</option>
+</select>
 
-let x=(e.clientX-rect.left)
-let y=(e.clientY-rect.top)
+<div class="price">
 
-let el=document.createElement("div")
+Цена: <span id="price">0</span> грн
 
-el.classList.add("element")
-el.classList.add(currentTool)
+</div>
 
-let color=document.getElementById("colorPicker").value
+<button id="orderBtn">
+Отправить заявку
+</button>
 
-if(currentTool==="wall"||currentTool==="table"||currentTool==="sofa"||currentTool==="bed")
-el.style.background=color
+</div>
 
-el.style.left=x+"px"
-el.style.top=y+"px"
+</div>
 
-el.dataset.rot=0
+</div>
 
-makeDrag(el)
-makeSelect(el)
-
-canvas.appendChild(el)
-
-})
-
-function makeSelect(el){
-
-el.addEventListener("click",function(e){
-
-e.stopPropagation()
-
-if(selected) selected.classList.remove("selected")
-
-selected=el
-el.classList.add("selected")
-
-})
-
-}
-
-function deleteSelected(){
-
-if(selected){
-selected.remove()
-selected=null
-}
-
-}
-
-function rotate(){
-
-if(!selected) return
-
-let r=parseInt(selected.dataset.rot)
-
-r+=90
-
-selected.dataset.rot=r
-
-selected.style.transform="rotate("+r+"deg)"
-
-}
-
-function makeDrag(el){
-
-let offX,offY
-
-el.addEventListener("mousedown",function(e){
-
-offX=e.offsetX
-offY=e.offsetY
-
-function move(e){
-
-let rect=canvas.getBoundingClientRect()
-
-let x=e.clientX-rect.left-offX
-let y=e.clientY-rect.top-offY
-
-el.style.left=x+"px"
-el.style.top=y+"px"
-
-}
-
-document.addEventListener("mousemove",move)
-
-document.addEventListener("mouseup",function(){
-
-document.removeEventListener("mousemove",move)
-
-},{once:true})
-
-})
-
-}
-
-function save(){
-
-let arr=[]
-
-document.querySelectorAll(".element").forEach(el=>{
-
-arr.push({
-
-type:el.classList[1],
-x:el.style.left,
-y:el.style.top,
-color:el.style.background,
-rot:el.dataset.rot
-
-})
-
-})
-
-localStorage.setItem("house",JSON.stringify(arr))
-
-alert("Проект сохранён")
-
-}
-
-function load(){
-
-canvas.innerHTML=""
-
-let data=JSON.parse(localStorage.getItem("house"))
-
-if(!data) return
-
-data.forEach(d=>{
-
-let el=document.createElement("div")
-
-el.classList.add("element")
-el.classList.add(d.type)
-
-el.style.left=d.x
-el.style.top=d.y
-el.style.background=d.color
-
-el.dataset.rot=d.rot
-el.style.transform="rotate("+d.rot+"deg)"
-
-makeDrag(el)
-makeSelect(el)
-
-canvas.appendChild(el)
-
-})
-
-}
-
-document.addEventListener("click",function(){
-
-if(selected) selected.classList.remove("selected")
-selected=null
-
-})
-
-document.addEventListener("keydown",function(e){
-
-if(e.key==="Delete") deleteSelected()
-
-if(e.key==="r") rotate()
-
-})
-
-</script>
+<script src="data.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>
-```
