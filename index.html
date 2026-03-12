@@ -1,71 +1,196 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-
 <meta charset="UTF-8">
-<title>Конструктор дома</title>
+<title>3D Конструктор дома</title>
 
-<link rel="stylesheet" href="style.css">
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+overflow:hidden;
+background:#f0f0f0;
+}
+
+#ui{
+position:absolute;
+top:20px;
+left:20px;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 10px 30px rgba(0,0,0,0.2);
+width:260px;
+}
+
+button{
+width:100%;
+padding:10px;
+margin-top:10px;
+font-size:16px;
+cursor:pointer;
+border:none;
+background:black;
+color:white;
+}
+
+button:hover{
+background:#333;
+}
+
+.price{
+font-size:22px;
+font-weight:bold;
+margin-top:20px;
+}
+
+</style>
 
 </head>
 
 <body>
 
-<div class="container">
+<div id="ui">
 
-<h1>Конструктор дома</h1>
+<h3>Конструктор дома</h3>
 
-<div class="builder">
-
-<div class="left">
-
-<img id="houseImage" src="images/barnhouse.jpg">
-
-</div>
-
-<div class="right">
-
-<label>Модель дома</label>
-
-<select id="modelSelect"></select>
-
-<label>Площадь (м²)</label>
-
-<input type="range" min="50" max="200" value="100" id="areaRange">
-<div id="areaValue">100 м²</div>
-
-<label>Фасад</label>
-
-<select id="facade">
-<option value="0">Стандарт</option>
-<option value="80000">Премиум</option>
-</select>
-
-<label>Терраса</label>
-
-<select id="terrace">
-<option value="0">Нет</option>
-<option value="120000">Есть</option>
-</select>
+<button onclick="addWall()">Добавить стену</button>
+<button onclick="addWindow()">Добавить окно</button>
+<button onclick="addDoor()">Добавить дверь</button>
 
 <div class="price">
-
 Цена: <span id="price">0</span> грн
-
-</div>
-
-<button id="orderBtn">
-Отправить заявку
-</button>
-
 </div>
 
 </div>
 
-</div>
 
-<script src="data.js"></script>
-<script src="script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+
+let price = 0
+
+const prices = {
+
+wall:15000,
+window:8000,
+door:12000
+
+}
+
+const scene = new THREE.Scene()
+scene.background = new THREE.Color(0xf0f0f0)
+
+const camera = new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+)
+
+const renderer = new THREE.WebGLRenderer({antialias:true})
+renderer.setSize(window.innerWidth,window.innerHeight)
+document.body.appendChild(renderer.domElement)
+
+const controls = new THREE.OrbitControls(camera,renderer.domElement)
+
+camera.position.set(10,10,10)
+controls.update()
+
+const light = new THREE.DirectionalLight(0xffffff,1)
+light.position.set(10,20,10)
+scene.add(light)
+
+const ambient = new THREE.AmbientLight(0xffffff,0.6)
+scene.add(ambient)
+
+const grid = new THREE.GridHelper(50,50)
+scene.add(grid)
+
+function updatePrice(){
+
+document.getElementById("price").innerText =
+price.toLocaleString()
+
+}
+
+function addWall(){
+
+const geometry = new THREE.BoxGeometry(4,3,0.2)
+
+const material = new THREE.MeshStandardMaterial({
+color:0xcccccc
+})
+
+const wall = new THREE.Mesh(geometry,material)
+
+wall.position.x = Math.random()*10-5
+wall.position.z = Math.random()*10-5
+wall.position.y = 1.5
+
+scene.add(wall)
+
+price += prices.wall
+updatePrice()
+
+}
+
+function addWindow(){
+
+const geometry = new THREE.BoxGeometry(1.2,1.2,0.1)
+
+const material = new THREE.MeshStandardMaterial({
+color:0x88ccee
+})
+
+const windowMesh = new THREE.Mesh(geometry,material)
+
+windowMesh.position.x = Math.random()*10-5
+windowMesh.position.z = Math.random()*10-5
+windowMesh.position.y = 1.5
+
+scene.add(windowMesh)
+
+price += prices.window
+updatePrice()
+
+}
+
+function addDoor(){
+
+const geometry = new THREE.BoxGeometry(1,2.2,0.1)
+
+const material = new THREE.MeshStandardMaterial({
+color:0x553311
+})
+
+const door = new THREE.Mesh(geometry,material)
+
+door.position.x = Math.random()*10-5
+door.position.z = Math.random()*10-5
+door.position.y = 1.1
+
+scene.add(door)
+
+price += prices.door
+updatePrice()
+
+}
+
+function animate(){
+
+requestAnimationFrame(animate)
+
+renderer.render(scene,camera)
+
+}
+
+animate()
+
+</script>
 
 </body>
 </html>
