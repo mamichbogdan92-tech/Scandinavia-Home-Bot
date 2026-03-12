@@ -3,127 +3,144 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Симулятор постройки дома — Scandinavia Home</title>
+  <title>3D Симулятор — Scandinavia Home</title>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/examples/js/controls/OrbitControls.min.js"></script>
   <style>
-    body { margin: 0; font-family: Arial; background: #f0f0f0; height: 100vh; overflow: hidden; }
-    #canvas { width: 100%; height: 70vh; background: #a5d6a7; position: relative; border: 5px solid #2e7d32; }
-    #sidebar { position: absolute; top: 0; right: 0; width: 360px; height: 100vh; background: white; padding: 20px; overflow-y: auto; box-shadow: -6px 0 30px rgba(0,0,0,0.25); }
-    .module { width: 100%; height: 70px; background: #fff; border: 3px solid #4caf50; margin: 10px 0; display: flex; align-items: center; justify-content: center; cursor: grab; border-radius: 12px; font-weight: bold; }
-    button { width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius: 10px; cursor: pointer; color: white; }
-    #price { font-size: 21px; font-weight: bold; background: #e8f5e9; padding: 18px; border-radius: 14px; text-align: center; margin: 20px 0; color: #1b5e20; }
-    h1 { color: #1b5e20; text-align: center; }
+    body { margin: 0; font-family: Arial; background: #111; height: 100vh; overflow: hidden; color: white; }
+    #container { width: 100%; height: 100vh; }
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.85);
+      padding: 20px;
+      border-radius: 16px;
+      width: 340px;
+      z-index: 100;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    #price { font-size: 21px; font-weight: bold; color: lime; text-align: center; margin: 15px 0; }
+    h1 { text-align: center; margin: 0 0 15px; font-size: 26px; }
   </style>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
-  <div id="sidebar">
-    <h1>Симулятор постройки дома</h1>
-    <p>Перетаскивай модули — дом будет строиться</p>
-
-    <div class="module" draggable="true" data-type="wall">🧱 Стена</div>
-    <div class="module" draggable="true" data-type="roof">🏠 Крыша</div>
-    <div class="module" draggable="true" data-type="terrace">🌳 Терраса</div>
-    <div class="module" draggable="true" data-type="window">🪟 Окно</div>
-    <div class="module" draggable="true" data-type="door">🚪 Дверь</div>
-
-    <button onclick="changeColor()" style="background:#2196F3;">🎨 Сменить цвет дома</button>
-    <button onclick="sendToBot()" style="background:#4CAF50;">Отправить менеджеру</button>
-
+  <div id="container"></div>
+  <div id="ui">
+    <h1>3D Симулятор постройки</h1>
+    <select id="style">
+      <option value="23500">Modern — 23 500 грн/м²</option>
+      <option value="24000">Scandinavia — 24 000 грн/м²</option>
+      <option value="24500">BarnHouse — 24 500 грн/м²</option>
+    </select>
+    <button id="addWall">🧱 Добавить стену</button>
+    <button id="addRoof">🏠 Добавить крышу</button>
+    <button id="addTerrace">🌳 Добавить террасу</button>
+    <button id="addWindow">🪟 Добавить окно</button>
+    <button id="addDoor">🚪 Добавить дверь</button>
+    <button id="changeColor">🎨 Сменить цвет</button>
+    <button id="sendConfig" style="background:#4CAF50;">Отправить менеджеру</button>
     <div id="price">Площадь: 50 м² | Цена: 1 150 000 грн</div>
   </div>
 
   <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight * 0.7;
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
 
-    let wallsHeight = 180;
-    let hasRoof = false;
-    let hasTerrace = false;
-    let hasWindows = 0;
-    let hasDoors = 0;
-    let totalArea = 50;
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 10, 25);
 
-    function drawHouse() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('container').appendChild(renderer.domElement);
 
-      // Земля
-      ctx.fillStyle = '#4caf50';
-      ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
 
-      // Стены (белые)
-      ctx.fillStyle = '#f5f5f5';
-      ctx.fillRect(canvas.width * 0.25, canvas.height - wallsHeight - 60, canvas.width * 0.5, wallsHeight);
+    // Свет
+    scene.add(new THREE.DirectionalLight(0xffffff, 1.8).position.set(10, 20, 10));
+    scene.add(new THREE.AmbientLight(0xffffff, 1));
 
-      // Окна
-      ctx.fillStyle = '#87ceeb';
-      for (let i = 0; i < hasWindows; i++) {
-        ctx.fillRect(canvas.width * 0.32 + i * 70, canvas.height - wallsHeight + 40, 45, 45);
-      }
+    // Стены
+    let walls = new THREE.Mesh(new THREE.BoxGeometry(12, 7, 12), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    walls.position.y = 3.5;
+    scene.add(walls);
 
-      // Дверь
-      if (hasDoors > 0) {
-        ctx.fillStyle = '#5d4037';
-        ctx.fillRect(canvas.width * 0.45, canvas.height - wallsHeight + 30, 40, 80);
-      }
+    // Крыша
+    let roof = new THREE.Mesh(new THREE.ConeGeometry(11, 5, 4), new THREE.MeshStandardMaterial({ color: 0xb22222 }));
+    roof.position.y = 9.5;
+    roof.rotation.y = Math.PI / 4;
+    scene.add(roof);
 
-      // Крыша
-      if (hasRoof) {
-        ctx.fillStyle = '#b22222';
-        ctx.beginPath();
-        ctx.moveTo(canvas.width * 0.25, canvas.height - wallsHeight - 60);
-        ctx.lineTo(canvas.width * 0.5, canvas.height - wallsHeight - 160);
-        ctx.lineTo(canvas.width * 0.75, canvas.height - wallsHeight - 60);
-        ctx.fill();
-      }
+    // Терраса
+    let terrace = new THREE.Mesh(new THREE.BoxGeometry(14, 0.4, 8), new THREE.MeshStandardMaterial({ color: 0x8b4513 }));
+    terrace.position.set(0, 0.2, 11);
+    terrace.visible = false;
+    scene.add(terrace);
 
-      // Терраса
-      if (hasTerrace) {
-        ctx.fillStyle = '#8b4513';
-        ctx.fillRect(canvas.width * 0.2, canvas.height - 70, canvas.width * 0.6, 20);
-      }
+    // Окно и дверь
+    let windowMesh = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.2), new THREE.MeshStandardMaterial({ color: 0x87ceeb }));
+    windowMesh.position.set(3, 4, 6.1);
+    windowMesh.visible = false;
+    scene.add(windowMesh);
 
-      updatePrice();
-    }
+    let door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.5, 0.2), new THREE.MeshStandardMaterial({ color: 0x5d4037 }));
+    door.position.set(-3, 2, 6.1);
+    door.visible = false;
+    scene.add(door);
+
+    let area = 50;
+    let basePrice = 23500;
+    const priceEl = document.getElementById('price');
 
     function updatePrice() {
-      const totalPrice = Math.round(totalArea * 23500);
-      document.getElementById('price').innerText = `Площадь: ${totalArea} м² | Цена: ${totalPrice.toLocaleString()} грн`;
+      area = 50 + (terrace.visible ? 18 : 0) + (windowMesh.visible ? 3 : 0) + (door.visible ? 2 : 0);
+      priceEl.innerText = `Площадь: ${area} м² | Цена: ${(area * basePrice).toLocaleString()} грн`;
     }
+    updatePrice();
 
-    document.querySelectorAll('.module').forEach(mod => {
-      mod.addEventListener('dragstart', e => {
-        e.dataTransfer.setData('type', mod.dataset.type);
-      });
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Кнопки
+    document.getElementById('addWall').onclick = () => { walls.scale.y += 0.2; area += 12; updatePrice(); };
+    document.getElementById('addRoof').onclick = () => { roof.visible = true; area += 8; updatePrice(); };
+    document.getElementById('addTerrace').onclick = () => { terrace.visible = true; area += 18; updatePrice(); };
+    document.getElementById('addWindow').onclick = () => { windowMesh.visible = true; area += 3; updatePrice(); };
+    document.getElementById('addDoor').onclick = () => { door.visible = true; area += 2; updatePrice(); };
+    document.getElementById('changeColor').onclick = () => {
+      walls.material.color.set(Math.random() * 0xffffff);
+      roof.material.color.set(Math.random() * 0xffffff);
+    };
+
+    document.getElementById('style').onchange = (e) => {
+      basePrice = parseInt(e.target.value);
+      updatePrice();
+    };
+
+    document.getElementById('sendConfig').onclick = () => {
+      alert(`✅ Дом построен и отправлен менеджеру!\nПлощадь: ${area} м²\nЦена: ${(area * basePrice).toLocaleString()} грн`);
+    };
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     });
-
-    canvas.addEventListener('drop', e => {
-      e.preventDefault();
-      const type = e.dataTransfer.getData('type');
-
-      if (type === 'wall') { totalArea += 12; wallsHeight += 50; }
-      if (type === 'roof') { hasRoof = true; totalArea += 8; }
-      if (type === 'terrace') { hasTerrace = true; totalArea += 18; }
-      if (type === 'window') { hasWindows++; totalArea += 4; }
-      if (type === 'door') { hasDoors++; totalArea += 3; }
-
-      drawHouse();
-    });
-
-    canvas.addEventListener('dragover', e => e.preventDefault());
-
-    function changeColor() {
-      const colors = ['#f5f5f5', '#a5d6a7', '#b0bec5', '#ffccbc'];
-      ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
-      drawHouse();
-    }
-
-    function sendToBot() {
-      alert(`✅ Дом построен!\nПлощадь: ${totalArea} м²\nЦена: ${Math.round(totalArea * 23500).toLocaleString()} грн`);
-    }
-
-    drawHouse();
   </script>
 </body>
 </html>
