@@ -3,135 +3,121 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Собери свой дом 3D — Scandinavia Home</title>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/examples/js/controls/OrbitControls.min.js"></script>
+  <title>Собери свой дом — Scandinavia Home</title>
   <style>
-    body { margin: 0; background: #000; height: 100vh; overflow: hidden; font-family: Arial; color: white; }
-    #container { width: 100%; height: 100vh; }
-    #ui {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: rgba(0,0,0,0.85);
-      padding: 20px;
-      border-radius: 16px;
-      width: 320px;
-      z-index: 100;
+    body { margin: 0; font-family: Arial; background: #f4f4f4; height: 100vh; overflow: hidden; }
+    #canvas { width: 100%; height: 65vh; background: #8bc34a; position: relative; border: 4px solid #388e3c; }
+    #sidebar { position: absolute; top: 0; right: 0; width: 340px; height: 100vh; background: white; padding: 20px; overflow-y: auto; box-shadow: -5px 0 25px rgba(0,0,0,0.2); }
+    .module { 
+      width: 100%; height: 65px; background: #fff; border: 2px solid #ddd; margin: 8px 0; 
+      display: flex; align-items: center; justify-content: center; cursor: grab; 
+      border-radius: 12px; font-weight: bold; font-size: 14px;
     }
-    button {
-      width: 100%;
-      padding: 14px;
-      margin: 8px 0;
-      background: #333;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      cursor: pointer;
-    }
-    button:hover { background: #555; }
-    #price { font-size: 19px; font-weight: bold; margin: 15px 0; color: lime; text-align: center; }
-    h1 { margin: 0 0 15px; font-size: 26px; text-align: center; }
+    .tab-button { padding: 12px; margin: 5px 0; background: #4CAF50; color: white; border: none; border-radius: 10px; cursor: pointer; width: 100%; }
+    .tab-button.active { background: #1b5e20; }
+    button { padding: 12px; margin: 8px 0; width: 100%; border: none; border-radius: 10px; cursor: pointer; }
+    #price { font-size: 19px; font-weight: bold; background: #e8f5e9; padding: 15px; border-radius: 12px; text-align: center; margin: 15px 0; }
   </style>
 </head>
 <body>
-  <div id="container"></div>
-  <div id="ui">
-    <h1>Собери свой дом 3D</h1>
-    <button id="addTerrace">+ Терраса (+18 м²)</button>
-    <button id="addWindow">+ Окно (+3 м²)</button>
-    <button id="addDoor">+ Дверь (+2 м²)</button>
-    <button id="changeWalls">🎨 Цвет стен</button>
-    <button id="changeRoof">🏠 Цвет крыши</button>
-    <button id="sendConfig" style="background:#4CAF50;">Отправить менеджеру</button>
-    <div id="price">Площадь: 50 м² | Цена: 1 150 000 грн</div>
+  <div id="canvas"></div>
+  <div id="sidebar">
+    <h2>Собери свой дом</h2>
+
+    <!-- Вкладки -->
+    <button class="tab-button active" onclick="openTab(0)">Основные модули</button>
+    <button class="tab-button" onclick="openTab(1)">Доп. расходы</button>
+
+    <!-- Вкладка 1 -->
+    <div id="tab0">
+      <div class="module" draggable="true" data-area="10">Стена (+10 м²)</div>
+      <div class="module" draggable="true" data-area="5">Крыша (+5 м²)</div>
+      <div class="module" draggable="true" data-area="18">Терраса (+18 м²)</div>
+      <div class="module" draggable="true" data-area="3">Окно (+3 м²)</div>
+      <div class="module" draggable="true" data-area="2">Дверь (+2 м²)</div>
+    </div>
+
+    <!-- Вкладка 2 (допы из твоего PDF) -->
+    <div id="tab1" class="tab" style="display:none;">
+      <div class="module" draggable="true" data-area="0" data-price="750">Доп. теплоизоляция +50 мм</div>
+      <div class="module" draggable="true" data-area="0" data-price="1500">Фасад из рейки</div>
+      <div class="module" draggable="true" data-area="0" data-price="4500">Тераса сосна</div>
+      <div class="module" draggable="true" data-area="0" data-price="5500">Тераса композит</div>
+      <div class="module" draggable="true" data-area="0" data-price="1400">Теплая подлога</div>
+      <div class="module" draggable="true" data-area="0" data-price="29000">Кондиционер</div>
+    </div>
+
+    <button onclick="changeColor()" style="background:#2196F3;">Сменить цвет дома</button>
+    <button onclick="sendToBot()" style="background:#4CAF50;">Отправить менеджеру</button>
+    <div id="price">Площадь: 0 м² | Цена: 0 грн</div>
   </div>
 
   <script>
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
-
-    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 8, 20);  // ← специально отодвинуто, чтобы дом был виден сразу
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById('container').appendChild(renderer.domElement);
-
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-
-    // Стены (большой белый дом)
-    const walls = new THREE.Mesh(
-      new THREE.BoxGeometry(12, 7, 12),
-      new THREE.MeshBasicMaterial({ color: 0xffffff })
-    );
-    walls.position.y = 3.5;
-    scene.add(walls);
-
-    // Крыша
-    const roof = new THREE.Mesh(
-      new THREE.ConeGeometry(11, 5, 4),
-      new THREE.MeshBasicMaterial({ color: 0xff0000 })
-    );
-    roof.position.y = 9.5;
-    roof.rotation.y = Math.PI / 4;
-    scene.add(roof);
-
-    // Терраса
-    const terrace = new THREE.Mesh(
-      new THREE.BoxGeometry(15, 0.4, 8),
-      new THREE.MeshBasicMaterial({ color: 0x555555 })
-    );
-    terrace.position.set(0, 0.2, 11);
-    terrace.visible = false;
-    scene.add(terrace);
-
-    // Окно и дверь (для примера)
-    const windowMesh = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.2), new THREE.MeshBasicMaterial({ color: 0x87ceeb }));
-    windowMesh.position.set(4, 4, 6.1);
-    windowMesh.visible = false;
-    scene.add(windowMesh);
-
-    const door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.5, 0.2), new THREE.MeshBasicMaterial({ color: 0x5d4037 }));
-    door.position.set(-4, 2, 6.1);
-    door.visible = false;
-    scene.add(door);
-
-    let area = 50;
-    const pricePerM2 = 23500;
-    const priceEl = document.getElementById('price');
+    const canvas = document.getElementById('canvas');
+    let totalArea = 0;
+    let totalExtraPrice = 0;
+    const basePrice = 23500;
 
     function updatePrice() {
-      area = 50 + (terrace.visible ? 18 : 0) + (windowMesh.visible ? 3 : 0) + (door.visible ? 2 : 0);
-      priceEl.innerText = `Площадь: ${area} м² | Цена: ${(area * pricePerM2).toLocaleString()} грн`;
+      const total = Math.round((totalArea * basePrice) + totalExtraPrice);
+      document.getElementById('price').innerText = `Площадь: ${totalArea} м² | Цена: ${total.toLocaleString()} грн`;
     }
-    updatePrice();
 
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+    // Перетаскивание
+    document.querySelectorAll('.module').forEach(mod => {
+      mod.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('area', mod.dataset.area || 0);
+        e.dataTransfer.setData('extraPrice', mod.dataset.price || 0);
+        e.dataTransfer.setData('name', mod.innerText);
+      });
     });
 
-    // Кнопки
-    document.getElementById('addTerrace').onclick = () => { terrace.visible = !terrace.visible; updatePrice(); };
-    document.getElementById('addWindow').onclick = () => { windowMesh.visible = !windowMesh.visible; updatePrice(); };
-    document.getElementById('addDoor').onclick = () => { door.visible = !door.visible; updatePrice(); };
-    document.getElementById('changeWalls').onclick = () => { walls.material.color.set(Math.random() * 0xffffff); };
-    document.getElementById('changeRoof').onclick = () => { roof.material.color.set(Math.random() * 0xffffff); };
+    canvas.addEventListener('dragover', e => e.preventDefault());
 
-    document.getElementById('sendConfig').onclick = () => {
-      alert("✅ Конфиг отправлен менеджеру!\nПлощадь: " + area + " м²\nЦена: " + (area * pricePerM2).toLocaleString() + " грн");
-    };
+    canvas.addEventListener('drop', e => {
+      e.preventDefault();
+      const area = parseFloat(e.dataTransfer.getData('area'));
+      const extraPrice = parseFloat(e.dataTransfer.getData('extraPrice'));
+      const name = e.dataTransfer.getData('name');
+
+      const item = document.createElement('div');
+      item.style.position = 'absolute';
+      item.style.left = (e.offsetX - 40) + 'px';
+      item.style.top = (e.offsetY - 40) + 'px';
+      item.style.width = '80px';
+      item.style.height = '80px';
+      item.style.border = '3px solid #333';
+      item.style.borderRadius = '10px';
+      item.style.background = '#fff';
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.fontSize = '11px';
+      item.style.textAlign = 'center';
+      item.innerText = name;
+      canvas.appendChild(item);
+
+      totalArea += area;
+      totalExtraPrice += extraPrice;
+      updatePrice();
+    });
+
+    function changeColor() {
+      const color = '#' + Math.floor(Math.random()*16777215).toString(16);
+      document.querySelectorAll('div[draggable]').forEach(div => div.style.background = color);
+    }
+
+    function sendToBot() {
+      const config = { area: totalArea, price: Math.round(totalArea * basePrice + totalExtraPrice) };
+      alert("✅ Конфиг отправлен менеджеру!\nПлощадь: " + totalArea + " м²\nЦена: " + config.price.toLocaleString() + " грн");
+    }
+
+    function openTab(n) {
+      document.querySelectorAll('.tab').forEach(t => t.style.display = 'none');
+      document.getElementById('tab' + n).style.display = 'block';
+    }
+
+    updatePrice();
   </script>
 </body>
 </html>
