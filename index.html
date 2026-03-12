@@ -3,62 +3,105 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Конструктор — Scandinavia Home</title>
+  <title>Собери свой дом 3D — Scandinavia Home</title>
   <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/examples/js/controls/OrbitControls.min.js"></script>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f0f0f0; height: 100vh; overflow: hidden; }
-    #container { width: 100%; height: 100vh; }
-    #ui {
+    body { margin: 0; font-family: Arial, sans-serif; background: #f4f4f4; height: 100vh; overflow: hidden; }
+    #container { width: 100%; height: 100vh; background: #e0f7fa; }
+    #sidebar {
       position: absolute;
-      top: 15px;
-      left: 15px;
-      background: rgba(255,255,255,0.95);
+      top: 0;
+      left: 0;
+      width: 320px;
+      height: 100vh;
+      background: white;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.15);
       padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-      max-width: 340px;
+      overflow-y: auto;
       z-index: 100;
     }
-    h1 { margin: 0 0 10px; color: #1b5e20; font-size: 26px; }
-    select, button {
+    .tab {
+      display: none;
+    }
+    .tab.active { display: block; }
+    button, .tab-button {
       width: 100%;
       padding: 12px;
       margin: 8px 0;
-      font-size: 15px;
-      border-radius: 10px;
       border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      cursor: pointer;
     }
-    button { background: #4CAF50; color: white; cursor: pointer; font-weight: 600; }
-    #price { font-size: 20px; font-weight: bold; color: #1b5e20; text-align: center; margin: 15px 0; background: rgba(76,175,80,0.15); padding: 12px; border-radius: 10px; }
+    .tab-button {
+      background: #4CAF50;
+      color: white;
+    }
+    .tab-button.active { background: #1b5e20; }
+    #price {
+      background: #e8f5e9;
+      padding: 15px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      color: #1b5e20;
+      margin: 15px 0;
+    }
+    h1 { color: #1b5e20; font-size: 26px; text-align: center; }
   </style>
 </head>
 <body>
   <div id="container"></div>
-  <div id="ui">
-    <h1>Собери свой дом 3D</h1>
-    <select id="style">
-      <option value="23500">Modern — 23 500 грн/м²</option>
-      <option value="24000">Scandinavia — 24 000 грн/м²</option>
-      <option value="24500">BarnHouse — 24 500 грн/м²</option>
-    </select>
-    <button id="addTerrace">+ Терраса (+18 м²)</button>
-    <button id="addWindow">+ Окно (+3 м²)</button>
-    <button id="addDoor">+ Дверь (+2 м²)</button>
-    <button id="changeWalls">🎨 Цвет стен</button>
-    <button id="changeRoof">🏠 Цвет крыши</button>
-    <button id="sendConfig">Отправить менеджеру</button>
+
+  <div id="sidebar">
+    <h1>Собери свой дом 3D 🏠</h1>
+
+    <!-- Вкладки -->
+    <div style="display:flex; gap:8px; margin-bottom:15px;">
+      <button class="tab-button active" onclick="openTab(0)">Модели</button>
+      <button class="tab-button" onclick="openTab(1)">Допы</button>
+      <button class="tab-button" onclick="openTab(2)">Сборка</button>
+    </div>
+
+    <!-- Вкладка 1: Модели -->
+    <div class="tab active" id="tab0">
+      <select id="style" style="width:100%; padding:12px; border-radius:10px;">
+        <option value="23500">Modern — 23 500 грн/м²</option>
+        <option value="24000">Scandinavia — 24 000 грн/м²</option>
+        <option value="24500">BarnHouse — 24 500 грн/м²</option>
+      </select>
+    </div>
+
+    <!-- Вкладка 2: Дополнительные расходы (из твоего PDF) -->
+    <div class="tab" id="tab1">
+      <h3>Доп. расходы</h3>
+      <small style="color:#666;">(цены из твоего прайса)</small>
+      <p><strong>Теплоизоляция +50 мм</strong> — 750 грн/м²</p>
+      <p><strong>Фасад рейка</strong> — 1500 грн/м²</p>
+      <p><strong>Тераса сосна</strong> — 4500 грн/м²</p>
+      <p><strong>Тераса композит</strong> — 5500 грн/м²</p>
+      <p><strong>Теплая подлога</strong> — 1400 грн/м²</p>
+      <p><strong>Кондиционер</strong> — 29 000 грн</p>
+      <!-- Можно добавить ещё из PDF, если нужно -->
+    </div>
+
+    <!-- Вкладка 3: Сборка -->
+    <div class="tab" id="tab2">
+      <button id="addTerrace">+ Терраса (+18 м²)</button>
+      <button id="addWindow">+ Окно (+3 м²)</button>
+      <button id="addDoor">+ Дверь (+2 м²)</button>
+      <button id="changeWalls">🎨 Цвет стен</button>
+      <button id="changeRoof">🏠 Цвет крыши</button>
+      <button id="sendConfig" style="background:#673ab7;">Отправить менеджеру</button>
+    </div>
+
     <div id="price">Площадь: 50 м² | Цена: 1 150 000 грн</div>
   </div>
 
   <script>
-    const tg = window.Telegram.WebApp || {};
-    if (tg.ready) tg.ready();
-    if (tg.expand) tg.expand();
-
-    let basePrice = 23500;
-    let area = 50;
-
+    // === 3D ЧАСТЬ ===
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xe0f7fa);
 
@@ -72,6 +115,7 @@
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
+    // Свет
     scene.add(new THREE.DirectionalLight(0xffffff, 1.8).position.set(10, 15, 10));
     scene.add(new THREE.AmbientLight(0xffffff, 1));
 
@@ -86,34 +130,19 @@
     roof.rotation.y = Math.PI / 4;
     scene.add(roof);
 
-    // Терраса
+    // Терраса, окно, дверь (скрыты по умолчанию)
     const terrace = new THREE.Mesh(new THREE.BoxGeometry(12, 0.4, 7), new THREE.MeshStandardMaterial({ color: 0x8b4513 }));
     terrace.position.set(0, 0.2, 9);
     terrace.visible = false;
     scene.add(terrace);
 
-    // Окно
-    const windowMesh = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.2, 0.2), new THREE.MeshStandardMaterial({ color: 0x87ceeb }));
-    windowMesh.position.set(3, 3, 5.1);
-    windowMesh.visible = false;
-    scene.add(windowMesh);
-
-    // Дверь
-    const door = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.6, 0.2), new THREE.MeshStandardMaterial({ color: 0x5d4037 }));
-    door.position.set(-3, 1.3, 5.1);
-    door.visible = false;
-    scene.add(door);
-
-    // Земля
-    scene.add(new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshStandardMaterial({ color: 0x3d8c40 })).rotateX(-Math.PI / 2));
-
+    let area = 50;
+    let basePrice = 23500;
     const priceEl = document.getElementById('price');
 
     function updatePrice() {
-      let extra = (terrace.visible ? 18 : 0) + (windowMesh.visible ? 3 : 0) + (door.visible ? 2 : 0);
-      area = 50 + extra;
-      const total = Math.round(area * basePrice);
-      priceEl.innerText = `Площадь: ${area} м² | Цена: ${total.toLocaleString()} грн`;
+      area = 50 + (terrace.visible ? 18 : 0);
+      priceEl.innerText = `Площадь: ${area} м² | Цена: ${(area * basePrice).toLocaleString()} грн`;
     }
     updatePrice();
 
@@ -124,16 +153,8 @@
     }
     animate();
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
     // Кнопки
     document.getElementById('addTerrace').onclick = () => { terrace.visible = !terrace.visible; updatePrice(); };
-    document.getElementById('addWindow').onclick = () => { windowMesh.visible = !windowMesh.visible; updatePrice(); };
-    document.getElementById('addDoor').onclick = () => { door.visible = !door.visible; updatePrice(); };
     document.getElementById('changeWalls').onclick = () => { walls.material.color.set(Math.random() * 0xffffff); };
     document.getElementById('changeRoof').onclick = () => { roof.material.color.set(Math.random() * 0xffffff); };
 
@@ -143,21 +164,17 @@
     };
 
     document.getElementById('sendConfig').onclick = () => {
-      const config = {
-        style: document.getElementById('style').options[document.getElementById('style').selectedIndex].text,
-        area: area,
-        price: area * basePrice,
-        terrace: terrace.visible,
-        windows: windowMesh.visible,
-        door: door.visible
-      };
-      if (tg.sendData) {
-        tg.sendData(JSON.stringify(config));
-        tg.close();
-      } else {
-        alert("Конфиг отправлен!\n" + JSON.stringify(config, null, 2));
-      }
+      const config = { area, price: area * basePrice, terrace: terrace.visible };
+      alert("Заявка отправлена!\n" + JSON.stringify(config, null, 2));
     };
+
+    // Вкладки
+    function openTab(n) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab' + n).classList.add('active');
+      document.querySelectorAll('.tab-button')[n].classList.add('active');
+    }
   </script>
 </body>
 </html>
