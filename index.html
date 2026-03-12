@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Симулятор — Scandinavia Home</title>
+  <title>3D Симулятор Постройки — Scandinavia Home</title>
   <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/examples/js/controls/OrbitControls.min.js"></script>
   <style>
@@ -19,6 +19,7 @@
       width: 340px;
       z-index: 100;
     }
+    h1 { text-align: center; margin: 0 0 15px; font-size: 26px; }
     button {
       width: 100%;
       padding: 14px;
@@ -30,14 +31,14 @@
       cursor: pointer;
       font-size: 15px;
     }
+    button:hover { background: #555; }
     #price { font-size: 21px; font-weight: bold; color: lime; text-align: center; margin: 15px 0; }
-    h1 { text-align: center; margin: 0 0 15px; font-size: 26px; }
   </style>
 </head>
 <body>
   <div id="container"></div>
   <div id="ui">
-    <h1>3D Симулятор постройки</h1>
+    <h1>3D Симулятор Постройки</h1>
     <select id="style">
       <option value="23500">Modern — 23 500 грн/м²</option>
       <option value="24000">Scandinavia — 24 000 грн/м²</option>
@@ -48,7 +49,7 @@
     <button id="addTerrace">🌳 Добавить террасу</button>
     <button id="addWindow">🪟 Добавить окно</button>
     <button id="addDoor">🚪 Добавить дверь</button>
-    <button id="changeColor">🎨 Сменить цвет</button>
+    <button id="changeColor">🎨 Сменить цвет дома</button>
     <button id="sendConfig" style="background:#4CAF50;">Отправить менеджеру</button>
     <div id="price">Площадь: 50 м² | Цена: 1 150 000 грн</div>
   </div>
@@ -67,7 +68,6 @@
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // Свет
     scene.add(new THREE.DirectionalLight(0xffffff, 1.8).position.set(10, 20, 10));
     scene.add(new THREE.AmbientLight(0xffffff, 1));
 
@@ -88,23 +88,12 @@
     terrace.visible = false;
     scene.add(terrace);
 
-    // Окно и дверь
-    let windowMesh = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.2), new THREE.MeshStandardMaterial({ color: 0x87ceeb }));
-    windowMesh.position.set(3, 4, 6.1);
-    windowMesh.visible = false;
-    scene.add(windowMesh);
-
-    let door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.5, 0.2), new THREE.MeshStandardMaterial({ color: 0x5d4037 }));
-    door.position.set(-3, 2, 6.1);
-    door.visible = false;
-    scene.add(door);
-
     let area = 50;
     let basePrice = 23500;
     const priceEl = document.getElementById('price');
 
     function updatePrice() {
-      area = 50 + (terrace.visible ? 18 : 0) + (windowMesh.visible ? 3 : 0) + (door.visible ? 2 : 0);
+      area = 50 + (terrace.visible ? 18 : 0);
       priceEl.innerText = `Площадь: ${area} м² | Цена: ${(area * basePrice).toLocaleString()} грн`;
     }
     updatePrice();
@@ -120,8 +109,8 @@
     document.getElementById('addWall').onclick = () => { walls.scale.y += 0.2; area += 12; updatePrice(); };
     document.getElementById('addRoof').onclick = () => { roof.visible = true; area += 8; updatePrice(); };
     document.getElementById('addTerrace').onclick = () => { terrace.visible = true; area += 18; updatePrice(); };
-    document.getElementById('addWindow').onclick = () => { windowMesh.visible = true; area += 3; updatePrice(); };
-    document.getElementById('addDoor').onclick = () => { door.visible = true; area += 2; updatePrice(); };
+    document.getElementById('addWindow').onclick = () => { area += 3; updatePrice(); };
+    document.getElementById('addDoor').onclick = () => { area += 2; updatePrice(); };
     document.getElementById('changeColor').onclick = () => {
       walls.material.color.set(Math.random() * 0xffffff);
       roof.material.color.set(Math.random() * 0xffffff);
