@@ -2,73 +2,55 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Мой Конструктор Домов — как Planner 5D</title>
+<title>МойДом — Конструктор</title>
 <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: Arial, sans-serif; background:#1e1e1e; color:white; overflow:hidden; height:100vh; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background:#1e1e1e; color:#ddd; height:100vh; overflow:hidden; }
     
     #topbar {
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 60px;
-        background: #2a2a2a;
-        display: flex;
-        align-items: center;
-        padding: 0 20px;
-        z-index: 200;
-        border-bottom: 1px solid #444;
+        position:absolute; top:0; left:0; right:0; height:60px;
+        background:#252525; display:flex; align-items:center; padding:0 20px;
+        border-bottom:1px solid #444; z-index:300;
     }
-    #logo { font-size: 22px; font-weight: bold; color:#4fc3f7; }
-    .tab { padding: 10px 20px; margin: 0 5px; background:#3a3a3a; border-radius: 6px; cursor:pointer; }
-    .tab.active { background:#4fc3f7; color:black; }
+    #logo { font-size:24px; font-weight:bold; color:#4fc3f7; }
+    .tabs { display:flex; gap:10px; margin-left:30px; }
+    .tab {
+        padding:10px 22px; background:#333; border-radius:8px; cursor:pointer; font-size:15px;
+    }
+    .tab.active { background:#4fc3f7; color:#111; font-weight:600; }
 
-    #sidebar {
-        position: absolute;
-        left: 0; top: 60px; bottom: 0;
-        width: 280px;
-        background: #252525;
-        padding: 15px;
-        overflow-y: auto;
-        border-right: 1px solid #444;
-        z-index: 100;
+    #leftbar {
+        position:absolute; left:0; top:60px; bottom:0; width:280px;
+        background:#252525; border-right:1px solid #444; padding:15px; overflow-y:auto; z-index:200;
     }
-    .category {
-        margin: 15px 0;
-        background: #333;
-        padding: 10px;
-        border-radius: 8px;
+    input[type="text"] {
+        width:100%; padding:12px; background:#333; border:none; border-radius:8px; color:white; margin-bottom:20px;
     }
-    .category h3 { margin-bottom: 10px; font-size: 15px; }
+    .category h3 { margin:15px 0 8px; color:#aaa; font-size:14px; }
+    .items {
+        display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;
+    }
     .item {
-        width: 70px; height: 70px;
-        background: #444;
-        margin: 5px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 12px;
-        text-align: center;
+        aspect-ratio:1; background:#333; border-radius:8px; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; font-size:11px; cursor:pointer; transition:0.2s;
     }
-    .item:hover { background:#4fc3f7; color:black; }
+    .item:hover { background:#4fc3f7; color:#111; }
 
     #canvasContainer {
-        position: absolute;
-        left: 280px; top: 60px; right: 0; bottom: 0;
+        position:absolute; left:280px; top:60px; right:0; bottom:0; background:#1a1a1a;
     }
 
     #rightbar {
-        position: absolute;
-        right: 0; top: 60px; bottom: 0;
-        width: 60px;
-        background: #252525;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding-top: 20px;
-        gap: 15px;
-        z-index: 100;
+        position:absolute; right:0; top:60px; bottom:0; width:70px;
+        background:#252525; border-left:1px solid #444; display:flex; flex-direction:column;
+        align-items:center; padding-top:20px; gap:20px; z-index:200;
+    }
+    .tool { font-size:24px; cursor:pointer; padding:10px; border-radius:8px; }
+    .tool:hover { background:#333; }
+
+    #status {
+        position:absolute; bottom:15px; left:300px; background:rgba(0,0,0,0.6); padding:6px 12px;
+        border-radius:6px; font-size:13px; z-index:100;
     }
 </style>
 </head>
@@ -76,97 +58,230 @@
 
 <div id="topbar">
     <div id="logo">🏠 МойДом</div>
+    <div class="tabs">
+        <div class="tab active" id="tab2d">2D</div>
+        <div class="tab" id="tab3d">3D</div>
+    </div>
     <div style="flex:1"></div>
-    <div class="tab active" onclick="switchMode(2)">2D</div>
-    <div class="tab" onclick="switchMode(3)">3D</div>
-    <div style="flex:1"></div>
-    <button style="padding:8px 16px; background:#4fc3f7; color:black; border:none; border-radius:6px;">Сохранить проект</button>
+    <button onclick="saveProject()" style="padding:10px 20px; background:#4fc3f7; color:#111; border:none; border-radius:8px; font-weight:600;">Сохранить проект</button>
 </div>
 
-<div id="sidebar">
-    <input type="text" placeholder="Поиск объектов..." style="width:100%; padding:10px; border-radius:8px; border:none; margin-bottom:15px;">
+<div id="leftbar">
+    <input type="text" id="search" placeholder="Поиск мебели, материалов...">
     
     <div class="category">
-        <h3>Стены</h3>
-        <div class="item" onclick="startWallDrawing()">🧱<br>Стена</div>
+        <h3>Строительные элементы</h3>
+        <div class="items">
+            <div class="item" onclick="setTool('wall')">🧱<br>Стена</div>
+            <div class="item" onclick="addOpening('window')">🪟<br>Окно</div>
+            <div class="item" onclick="addOpening('door')">🚪<br>Дверь</div>
+        </div>
     </div>
-    
-    <div class="category">
-        <h3>Проёмы</h3>
-        <div class="item" onclick="addElement('window')">🪟<br>Окно</div>
-        <div class="item" onclick="addElement('door')">🚪<br>Дверь</div>
-    </div>
-    
+
     <div class="category">
         <h3>Мебель</h3>
-        <div class="item">🛏️<br>Кровать</div>
-        <div class="item">🛋️<br>Диван</div>
-        <div class="item">📺<br>ТВ</div>
-        <div class="item">🍳<br>Кухня</div>
+        <div class="items">
+            <div class="item" onclick="addFurniture('bed')">🛏️<br>Кровать</div>
+            <div class="item" onclick="addFurniture('sofa')">🛋️<br>Диван</div>
+            <div class="item" onclick="addFurniture('table')">🪑<br>Стол</div>
+            <div class="item" onclick="addFurniture('tv')">📺<br>ТВ</div>
+        </div>
     </div>
 </div>
 
 <div id="rightbar">
-    <div style="cursor:pointer;">↔</div>
-    <div style="cursor:pointer;">↕</div>
-    <div style="cursor:pointer;">⟳</div>
-    <div style="cursor:pointer;">🗑️</div>
+    <div class="tool" onclick="deleteSelected()">🗑️</div>
+    <div class="tool" onclick="rotateSelected()">⟳</div>
 </div>
 
 <div id="canvasContainer"></div>
+<div id="status">Режим: 2D • Масштаб: 1м = 20px</div>
 
 <script src="https://cdn.jsdelivr.net/npm/konva@9/konva.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/OrbitControls.js"></script>
+
 <script>
-// Здесь будет основной код (Konva stage + рисование стен)
-const stage = new Konva.Stage({
-    container: 'canvasContainer',
-    width: window.innerWidth - 340,
-    height: window.innerHeight - 60
-});
+// ==================== Основные переменные ====================
+let stage, layer;
+let currentTool = 'wall';
+let selected = null;
+let walls = [];
+let rooms = [];
 
-const layer = new Konva.Layer();
-stage.add(layer);
-
-let isDrawingWall = false;
-let wallStart = null;
-
-function startWallDrawing() {
-    isDrawingWall = true;
-    alert("Режим рисования стен активирован.\nКликни и тяни мышкой для создания стены.");
-}
-
-stage.on('mousedown', function(e) {
-    if (!isDrawingWall) return;
-    const pos = stage.getPointerPosition();
-    wallStart = {x: pos.x, y: pos.y};
-});
-
-stage.on('mouseup', function(e) {
-    if (!isDrawingWall || !wallStart) return;
-    const pos = stage.getPointerPosition();
+// Инициализация 2D
+function init2D() {
+    const container = document.getElementById('canvasContainer');
+    container.innerHTML = '<div id="konva"></div>';
     
-    const wall = new Konva.Line({
-        points: [wallStart.x, wallStart.y, pos.x, pos.y],
-        stroke: '#888',
-        strokeWidth: 18,
-        lineCap: 'round',
-        lineJoin: 'round'
+    stage = new Konva.Stage({
+        container: 'konva',
+        width: container.clientWidth,
+        height: container.clientHeight
     });
     
-    layer.add(wall);
+    layer = new Konva.Layer();
+    stage.add(layer);
+
+    // Рисование стен
+    let drawing = false;
+    let startPoint = null;
+
+    stage.on('mousedown', (e) => {
+        if (currentTool !== 'wall') return;
+        drawing = true;
+        const pos = stage.getPointerPosition();
+        startPoint = {x: pos.x, y: pos.y};
+    });
+
+    stage.on('mouseup', (e) => {
+        if (!drawing || !startPoint) return;
+        const pos = stage.getPointerPosition();
+        
+        const wall = new Konva.Line({
+            points: [startPoint.x, startPoint.y, pos.x, pos.y],
+            stroke: '#777',
+            strokeWidth: 22,
+            lineCap: 'round',
+            lineJoin: 'round',
+            draggable: true
+        });
+        
+        wall.userData = {type: 'wall'};
+        wall.on('click', () => selectItem(wall));
+        
+        layer.add(wall);
+        walls.push(wall);
+        layer.draw();
+        
+        drawing = false;
+        startPoint = null;
+        tryDetectRooms();
+    });
+
+    // Общие события
+    stage.on('click', (e) => {
+        if (e.target === stage) deselect();
+    });
+}
+
+// Простое определение комнат (пока базовое)
+function tryDetectRooms() {
+    // В следующей версии сделаем нормальное
+    console.log('Комнаты обнаружены:', walls.length);
+}
+
+// Выбор элемента
+function selectItem(item) {
+    deselect();
+    selected = item;
+    item.stroke('#4fc3f7');
+    item.strokeWidth(item.strokeWidth() + 4);
     layer.draw();
+}
+
+function deselect() {
+    if (selected) {
+        selected.stroke('#777');
+        selected.strokeWidth(22);
+        layer.draw();
+    }
+    selected = null;
+}
+
+function deleteSelected() {
+    if (!selected) return;
+    selected.destroy();
+    layer.draw();
+    selected = null;
+}
+
+function rotateSelected() {
+    if (!selected) return;
+    selected.rotation(selected.rotation() + 45);
+    layer.draw();
+}
+
+// Добавление мебели
+function addFurniture(type) {
+    let emoji = '📦';
+    if (type === 'bed') emoji = '🛏️';
+    if (type === 'sofa') emoji = '🛋️';
+    if (type === 'table') emoji = '🪑';
+    if (type === 'tv') emoji = '📺';
+
+    const furn = new Konva.Text({
+        x: 400 + Math.random()*200,
+        y: 300 + Math.random()*200,
+        text: emoji,
+        fontSize: 60,
+        draggable: true
+    });
     
-    wallStart = null;
-    isDrawingWall = false; // можно убрать, если хочешь непрерывное рисование
-});
+    furn.userData = {type: 'furniture'};
+    furn.on('click', () => selectItem(furn));
+    layer.add(furn);
+    layer.draw();
+}
+
+function addOpening(type) {
+    alert(`Добавление ${type === 'window' ? 'окна' : 'двери'}.\n\nПока просто кликни на стену в будущем.\nСейчас добавим как мебель для теста.`);
+    addFurniture(type);
+}
+
+function setTool(tool) {
+    currentTool = tool;
+}
+
+// Сохранение / загрузка
+function saveProject() {
+    const data = stage.toJSON();
+    localStorage.setItem('myHouseProject', data);
+    alert('Проект сохранён в браузере!');
+}
+
+function loadProject() {
+    const saved = localStorage.getItem('myHouseProject');
+    if (saved) {
+        // В реальной версии нужно правильно восстанавливать
+        alert('Загрузка проекта (пока упрощённо)');
+    }
+}
+
+// Переключение 2D/3D (пока заглушка для 3D)
+document.getElementById('tab2d').onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab2d').classList.add('active');
+    init2D();
+};
+
+document.getElementById('tab3d').onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab3d').classList.add('active');
+    alert('3D-режим пока в разработке.\n\nСкоро будет полноценный Three.js вид с теми же стенами.');
+    // Здесь будет init3D();
+};
+
+// Запуск
+window.onload = () => {
+    init2D();
+    
+    // Пример стартовых элементов
+    setTimeout(() => {
+        const exampleWall1 = new Konva.Line({ points: [200,200, 600,200], stroke:'#777', strokeWidth:22, draggable:true });
+        const exampleWall2 = new Konva.Line({ points: [600,200, 600,500], stroke:'#777', strokeWidth:22, draggable:true });
+        layer.add(exampleWall1, exampleWall2);
+        walls.push(exampleWall1, exampleWall2);
+        layer.draw();
+    }, 500);
+};
 
 window.addEventListener('resize', () => {
-    stage.width(window.innerWidth - 340);
-    stage.height(window.innerHeight - 60);
+    if (stage) {
+        stage.width(document.getElementById('canvasContainer').clientWidth);
+        stage.height(document.getElementById('canvasContainer').clientHeight);
+    }
 });
-
-alert("Готово!\n\nПока работает только рисование стен линией.\n\nСкажи, что добавить в первую очередь:\n1. Автоопределение комнат + пол\n2. Мебель (перетаскивание)\n3. Переключение в 3D\n4. Измерения в метрах\n5. Левая панель с реальными иконками мебели");
-
 </script>
 </body>
 </html>
