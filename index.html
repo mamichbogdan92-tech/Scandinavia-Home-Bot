@@ -2,241 +2,170 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Конструктор дома — План этажа</title>
+<title>Мой Конструктор Домов — как Planner 5D</title>
 <style>
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #f4f4f4;
-        overflow: hidden;
-    }
-    #toolbar {
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: Arial, sans-serif; background:#1e1e1e; color:white; overflow:hidden; height:100vh; }
+    
+    #topbar {
         position: absolute;
-        top: 15px;
-        left: 15px;
-        background: white;
+        top: 0; left: 0; right: 0;
+        height: 60px;
+        background: #2a2a2a;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        z-index: 200;
+        border-bottom: 1px solid #444;
+    }
+    #logo { font-size: 22px; font-weight: bold; color:#4fc3f7; }
+    .tab { padding: 10px 20px; margin: 0 5px; background:#3a3a3a; border-radius: 6px; cursor:pointer; }
+    .tab.active { background:#4fc3f7; color:black; }
+
+    #sidebar {
+        position: absolute;
+        left: 0; top: 60px; bottom: 0;
+        width: 280px;
+        background: #252525;
         padding: 15px;
-        border-radius: 12px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        overflow-y: auto;
+        border-right: 1px solid #444;
         z-index: 100;
-        width: 260px;
     }
-    h2 { margin: 0 0 15px 0; font-size: 20px; }
-    button {
-        width: 100%;
-        padding: 12px;
-        margin: 6px 0;
-        font-size: 16px;
-        border: none;
+    .category {
+        margin: 15px 0;
+        background: #333;
+        padding: 10px;
         border-radius: 8px;
-        background: #222;
-        color: white;
-        cursor: pointer;
     }
-    button:hover { background: #444; }
-    button.active { background: #0066ff; }
+    .category h3 { margin-bottom: 10px; font-size: 15px; }
+    .item {
+        width: 70px; height: 70px;
+        background: #444;
+        margin: 5px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        text-align: center;
+    }
+    .item:hover { background:#4fc3f7; color:black; }
 
     #canvasContainer {
         position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
+        left: 280px; top: 60px; right: 0; bottom: 0;
     }
-    canvas {
-        display: block;
-    }
-    #info {
+
+    #rightbar {
         position: absolute;
-        bottom: 15px;
-        left: 15px;
-        background: white;
-        padding: 10px 15px;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        font-size: 14px;
-        color: #333;
+        right: 0; top: 60px; bottom: 0;
+        width: 60px;
+        background: #252525;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 20px;
+        gap: 15px;
+        z-index: 100;
     }
 </style>
 </head>
 <body>
 
-<div id="toolbar">
-    <h2>🏠 Конструктор дома</h2>
-    
-    <button id="btn-wall" class="active" onclick="setTool('wall')">Добавить стену</button>
-    <button id="btn-window" onclick="setTool('window')">Добавить окно</button>
-    <button id="btn-door" onclick="setTool('door')">Добавить дверь</button>
-    
-    <button onclick="clearAll()" style="background:#c00; margin-top:15px;">
-        Очистить всё
-    </button>
+<div id="topbar">
+    <div id="logo">🏠 МойДом</div>
+    <div style="flex:1"></div>
+    <div class="tab active" onclick="switchMode(2)">2D</div>
+    <div class="tab" onclick="switchMode(3)">3D</div>
+    <div style="flex:1"></div>
+    <button style="padding:8px 16px; background:#4fc3f7; color:black; border:none; border-radius:6px;">Сохранить проект</button>
 </div>
 
-<div id="info">
-    ЛКМ — добавить / переместить<br>
-    Зажать + двигать — перемещать элемент<br>
-    Колёсико мыши — масштаб
+<div id="sidebar">
+    <input type="text" placeholder="Поиск объектов..." style="width:100%; padding:10px; border-radius:8px; border:none; margin-bottom:15px;">
+    
+    <div class="category">
+        <h3>Стены</h3>
+        <div class="item" onclick="startWallDrawing()">🧱<br>Стена</div>
+    </div>
+    
+    <div class="category">
+        <h3>Проёмы</h3>
+        <div class="item" onclick="addElement('window')">🪟<br>Окно</div>
+        <div class="item" onclick="addElement('door')">🚪<br>Дверь</div>
+    </div>
+    
+    <div class="category">
+        <h3>Мебель</h3>
+        <div class="item">🛏️<br>Кровать</div>
+        <div class="item">🛋️<br>Диван</div>
+        <div class="item">📺<br>ТВ</div>
+        <div class="item">🍳<br>Кухня</div>
+    </div>
+</div>
+
+<div id="rightbar">
+    <div style="cursor:pointer;">↔</div>
+    <div style="cursor:pointer;">↕</div>
+    <div style="cursor:pointer;">⟳</div>
+    <div style="cursor:pointer;">🗑️</div>
 </div>
 
 <div id="canvasContainer"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/konva@9/konva.min.js"></script>
 <script>
-// ====================== Основные настройки ======================
-const width = window.innerWidth;
-const height = window.innerHeight;
-
+// Здесь будет основной код (Konva stage + рисование стен)
 const stage = new Konva.Stage({
     container: 'canvasContainer',
-    width: width,
-    height: height
+    width: window.innerWidth - 340,
+    height: window.innerHeight - 60
 });
 
 const layer = new Konva.Layer();
 stage.add(layer);
 
-let currentTool = 'wall';
-let selectedElement = null;
-let isDragging = false;
+let isDrawingWall = false;
+let wallStart = null;
 
-// ====================== Функции ======================
-function setTool(tool) {
-    currentTool = tool;
-    document.querySelectorAll('#toolbar button').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.id === `btn-${tool}`) btn.classList.add('active');
-    });
+function startWallDrawing() {
+    isDrawingWall = true;
+    alert("Режим рисования стен активирован.\nКликни и тяни мышкой для создания стены.");
 }
 
-function addWall(x, y) {
-    const wall = new Konva.Rect({
-        x: x,
-        y: y,
-        width: 200,
-        height: 12,
-        fill: '#555',
-        stroke: '#333',
-        strokeWidth: 2,
-        draggable: true,
-        cornerRadius: 2,
-        rotation: 0
+stage.on('mousedown', function(e) {
+    if (!isDrawingWall) return;
+    const pos = stage.getPointerPosition();
+    wallStart = {x: pos.x, y: pos.y};
+});
+
+stage.on('mouseup', function(e) {
+    if (!isDrawingWall || !wallStart) return;
+    const pos = stage.getPointerPosition();
+    
+    const wall = new Konva.Line({
+        points: [wallStart.x, wallStart.y, pos.x, pos.y],
+        stroke: '#888',
+        strokeWidth: 18,
+        lineCap: 'round',
+        lineJoin: 'round'
     });
     
-    wall.userData = { type: 'wall' };
-    
-    wall.on('click', () => selectElement(wall));
     layer.add(wall);
     layer.draw();
-}
-
-function addWindow(x, y) {
-    const win = new Konva.Rect({
-        x: x,
-        y: y,
-        width: 80,
-        height: 12,
-        fill: '#88ccff',
-        stroke: '#0066aa',
-        strokeWidth: 3,
-        draggable: true,
-        rotation: 0
-    });
-    win.userData = { type: 'window' };
-    win.on('click', () => selectElement(win));
-    layer.add(win);
-    layer.draw();
-}
-
-function addDoor(x, y) {
-    const door = new Konva.Rect({
-        x: x,
-        y: y,
-        width: 40,
-        height: 12,
-        fill: '#8B5A2B',
-        stroke: '#5c3a1f',
-        strokeWidth: 3,
-        draggable: true,
-        rotation: 0
-    });
-    door.userData = { type: 'door' };
-    door.on('click', () => selectElement(door));
-    layer.add(door);
-    layer.draw();
-}
-
-function selectElement(element) {
-    if (selectedElement) {
-        selectedElement.strokeWidth(2);
-        selectedElement.stroke('#333');
-    }
-    selectedElement = element;
-    element.stroke('#0066ff');
-    element.strokeWidth(4);
-    layer.draw();
-}
-
-// ====================== События ======================
-stage.on('click', function(e) {
-    if (e.target === stage) {  // клик по пустому месту
-        const pos = stage.getPointerPosition();
-        
-        if (currentTool === 'wall') addWall(pos.x - 100, pos.y - 6);
-        else if (currentTool === 'window') addWindow(pos.x - 40, pos.y - 6);
-        else if (currentTool === 'door') addDoor(pos.x - 20, pos.y - 6);
-    }
+    
+    wallStart = null;
+    isDrawingWall = false; // можно убрать, если хочешь непрерывное рисование
 });
 
-// Перемещение уже встроено в draggable
-
-// Масштаб колёсиком
-stage.on('wheel', (e) => {
-    e.evt.preventDefault();
-    
-    const oldScale = stage.scaleX();
-    const pointer = stage.getPointerPosition();
-    
-    const mousePointTo = {
-        x: (pointer.x - stage.x()) / oldScale,
-        y: (pointer.y - stage.y()) / oldScale
-    };
-    
-    const newScale = e.evt.deltaY > 0 ? oldScale * 0.9 : oldScale * 1.1;
-    stage.scale({ x: newScale, y: newScale });
-    
-    const newPos = {
-        x: pointer.x - mousePointTo.x * newScale,
-        y: pointer.y - mousePointTo.y * newScale
-    };
-    stage.position(newPos);
-    stage.draw();
-});
-
-function clearAll() {
-    if (confirm('Очистить весь план?')) {
-        layer.destroyChildren();
-        layer.draw();
-    }
-}
-
-// Адаптация под размер окна
 window.addEventListener('resize', () => {
-    stage.width(window.innerWidth);
-    stage.height(window.innerHeight);
-    stage.draw();
+    stage.width(window.innerWidth - 340);
+    stage.height(window.innerHeight - 60);
 });
 
-// ====================== Запуск ======================
-setTool('wall');
-
-// Добавим пару примеров стен, чтобы сразу было видно, как выглядит
-setTimeout(() => {
-    addWall(300, 200);
-    addWall(500, 200);
-    addWall(300, 400);
-    addWall(500, 400);
-    
-    addWindow(380, 195);
-    addDoor(520, 395);
-}, 300);
+alert("Готово!\n\nПока работает только рисование стен линией.\n\nСкажи, что добавить в первую очередь:\n1. Автоопределение комнат + пол\n2. Мебель (перетаскивание)\n3. Переключение в 3D\n4. Измерения в метрах\n5. Левая панель с реальными иконками мебели");
 
 </script>
 </body>
